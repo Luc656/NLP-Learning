@@ -129,7 +129,7 @@ class Analyser:
             self.logger.error(f"Error preparing data: {str(e)}")
             raise
 
-    def evaluate_model(self, model, X_test, y_test, class_names=None,
+    def evaluate_model(self, y_pred, y_test, X_test, model, class_names=None,
                        output_path: Optional[Union[str, Path]] = None,
                        save_plots: bool = False):
         """
@@ -146,18 +146,11 @@ class Analyser:
         Returns:
             Dict of evaluation metrics
         """
-        # Make predictions
-        y_pred = model.predict(X_test)
 
         # Get predicted probabilities for ROC curve
-        if hasattr(model, 'predict_proba'):
-            y_pred_proba = model.predict_proba(X_test)[:, 1]
-        else:
-            self.logger.warning("Model does not support predict_proba, using decision_function if available")
-            if hasattr(model, 'decision_function'):
-                y_pred_proba = model.decision_function(X_test)
-            else:
-                y_pred_proba = y_pred  # Fallback to binary predictions
+
+        y_pred_proba = model.predict_proba(X_test)[:, 1]
+
 
         # Calculate metrics
         accuracy = accuracy_score(y_test, y_pred)
@@ -172,7 +165,7 @@ class Analyser:
         fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
         # 1. Confusion Matrix
-        cm = confusion_matrix(y_test, y_pred, normalize='true')
+        cm = confusion_matrix(y_test, y_pred)
         class_labels = class_names if class_names else ["Class 0", "Class 1"]
         disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_labels)
         disp.plot(ax=axes[0], cmap='Blues', values_format='.2f')
